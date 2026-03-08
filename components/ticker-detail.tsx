@@ -13,6 +13,7 @@ import {
 interface TickerDetailProps {
   data: TickerData | null
   symbol: string
+  isLoading?: boolean
 }
 
 // Helper to calculate percentage change from current price
@@ -27,13 +28,36 @@ function calcVolumeChange(currentVol: number | undefined, avgVol: number | undef
   return ((currentVol - avgVol) / avgVol) * 100
 }
 
-export function TickerDetail({ data, symbol }: TickerDetailProps) {
-  if (!data) {
+export function TickerDetail({ data, symbol, isLoading }: TickerDetailProps) {
+  // Show loading state
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-4">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
           <p className="text-sm text-muted-foreground">Loading {symbol}...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show not found message when data is empty or invalid
+  if (!data || (!data.main_info && !data.trading_info)) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto">
+            <Activity className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Ticker Not Found</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Could not find data for <span className="font-mono text-primary">{symbol}</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Please check the ticker symbol and try again.
+            </p>
+          </div>
         </div>
       </div>
     )

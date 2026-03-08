@@ -88,7 +88,7 @@ export function Dashboard() {
   )
 
   // Fetch individual ticker data when selected
-  const { data: selectedTickerData } = useSWR(
+  const { data: selectedTickerData, isLoading: isSelectedTickerLoading } = useSWR(
     selectedTicker ? [selectedTicker] : null,
     fetcher,
     {
@@ -157,10 +157,16 @@ export function Dashboard() {
         {/* Sidebar Header */}
         <div className="sticky top-0 bg-sidebar z-10 border-b border-sidebar-border">
           <div className="flex items-center justify-between px-3 py-3">
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setSelectedTicker(null)
+                if (isMobile) setSidebarOpen(false)
+              }}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
               <Activity className="h-4 w-4 text-primary" />
               <span className="text-sm font-bold text-foreground">FinTerminal</span>
-            </div>
+            </button>
             <button
               onClick={() => setSidebarOpen(false)}
               className="p-1 hover:bg-secondary rounded transition-colors lg:hidden"
@@ -362,6 +368,7 @@ export function Dashboard() {
             <TickerDetail
               data={selectedTickerData?.[selectedTicker] || combinedData[selectedTicker] || null}
               symbol={selectedTicker}
+              isLoading={isSelectedTickerLoading && !combinedData[selectedTicker]}
             />
           ) : (
             <MarketOutlook
