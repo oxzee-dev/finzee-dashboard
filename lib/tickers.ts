@@ -14,9 +14,8 @@ export const sections: Section[] = [
       { symbol: "^IXIC", name: "NASDAQ" },
       { symbol: "^DJI", name: "Dow Jones" },
       { symbol: "^RUT", name: "Russell 2000" },
-      { symbol: "DX-Y.NYB", name: "Dollar Index" },
-      { symbol: "^VIX", name: "VIX" },
-      { symbol: "^TNX", name: "10Y Treasury" },
+      { symbol: "BTC-USD", name: "Bitcoin" },
+      { symbol: "GC=F", name: "Gold" },
     ],
   },
   {
@@ -128,7 +127,6 @@ export const marketOutlookTickers = [
   "^IXIC", 
   "^DJI",
   "^RUT",
-  "DX-Y.NYB",
-  "^VIX",
-  "^TNX",
+  "BTC-USD",
+  "GC=F",
 ]

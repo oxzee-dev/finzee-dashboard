@@ -26,6 +26,16 @@ export function Dashboard() {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [currentTime, setCurrentTime] = useState<string>("")
+
+  // Handle time on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString())
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Check for mobile
   useEffect(() => {
@@ -44,7 +54,7 @@ export function Dashboard() {
     allTickers,
     fetcher,
     {
-      refreshInterval: 60000, // Refresh every minute
+      refreshInterval: 60000,
       revalidateOnFocus: true,
       dedupingInterval: 30000,
     }
@@ -116,7 +126,7 @@ export function Dashboard() {
               name={section.name}
               tickers={section.tickers}
               tickerData={tickerData || {}}
-              defaultExpanded={index === 0} // Market Outlook expanded by default
+              defaultExpanded={index === 0}
               selectedTicker={selectedTicker}
               onSelectTicker={handleSelectTicker}
             />
@@ -181,10 +191,12 @@ export function Dashboard() {
                 <RefreshCw className="h-4 w-4 text-muted-foreground" />
               </button>
 
-              {/* Last Updated */}
-              <div className="text-[10px] text-muted-foreground hidden md:block">
-                {new Date().toLocaleTimeString()}
-              </div>
+              {/* Last Updated - client-side only */}
+              {currentTime && (
+                <div className="text-[10px] text-muted-foreground hidden md:block">
+                  {currentTime}
+                </div>
+              )}
             </div>
           </div>
         </header>

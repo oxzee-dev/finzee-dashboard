@@ -214,13 +214,16 @@ export function formatPrice(price: number | null): string {
 }
 
 // Helper to format large numbers
-export function formatLargeNumber(num: number | null): string {
-  if (num === null) return "N/A"
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`
-  if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`
-  return num.toFixed(2)
+export function formatLargeNumber(num: number | null | undefined | string): string {
+  if (num === null || num === undefined) return "N/A"
+  // Convert to number if it's a string
+  const numValue = typeof num === "string" ? parseFloat(num) : num
+  if (isNaN(numValue)) return "N/A"
+  if (numValue >= 1e12) return `${(numValue / 1e12).toFixed(2)}T`
+  if (numValue >= 1e9) return `${(numValue / 1e9).toFixed(2)}B`
+  if (numValue >= 1e6) return `${(numValue / 1e6).toFixed(2)}M`
+  if (numValue >= 1e3) return `${(numValue / 1e3).toFixed(2)}K`
+  return numValue.toFixed(2)
 }
 
 // Helper to format percentage change
