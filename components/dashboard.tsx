@@ -212,8 +212,8 @@ export function Dashboard() {
                 {watchlist.map((ticker) => {
                   const data = combinedData[ticker.symbol]
                   const price = data?.main_info?.currentPrice
-                  const change = data?.trading_info?.oneDayChange || data?.main_info?.oneDayChange
-                  const isPositive = typeof change === 'number' ? change >= 0 : true
+                  const changeStr = data?.trading_info?.oneDayChange || data?.main_info?.oneDayChange
+                  const isPositive = typeof changeStr === 'string' ? !changeStr.startsWith('-') : true
                   
                   return (
                     <div
@@ -240,6 +240,16 @@ export function Dashboard() {
                         {price !== undefined && (
                           <span className="font-medium text-foreground text-[10px]">
                             {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        )}
+                        {changeStr && (
+                          <span className={cn(
+                            "text-[9px] px-1 py-0.5 rounded font-medium",
+                            isPositive 
+                              ? "bg-terminal-green/20 text-terminal-green" 
+                              : "bg-terminal-red/20 text-terminal-red"
+                          )}>
+                            {isPositive && !changeStr.startsWith('+') ? '+' : ''}{changeStr}
                           </span>
                         )}
                         <button

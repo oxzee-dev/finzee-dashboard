@@ -2,7 +2,7 @@
 
 import { TradingViewChart } from "./tradingview-chart"
 import { TickerSidebar } from "./ticker-sidebar"
-import { formatChange } from "@/lib/api"
+import { formatChange, parsePercentage } from "@/lib/api"
 import type { TickerData } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { 
@@ -13,6 +13,18 @@ import {
 interface TickerDetailProps {
   data: TickerData | null
   symbol: string
+}
+
+// Helper to calculate percentage change from current price
+function calcPercentFromPrice(current: number | undefined, target: number | undefined): number | null {
+  if (!current || !target) return null
+  return ((current - target) / target) * 100
+}
+
+// Helper to calculate volume change percentage
+function calcVolumeChange(currentVol: number | undefined, avgVol: number | undefined): number | null {
+  if (!currentVol || !avgVol || avgVol === 0) return null
+  return ((currentVol - avgVol) / avgVol) * 100
 }
 
 export function TickerDetail({ data, symbol }: TickerDetailProps) {
@@ -30,6 +42,20 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
   const change = formatChange(data.trading_info?.oneDayChange || data.main_info?.oneDayChange)
   const TrendIcon = change.isPositive ? TrendingUp : TrendingDown
   const ArrowIcon = change.isPositive ? ArrowUpRight : ArrowDownRight
+
+  // Calculate performance metrics
+  const currentPrice = data.main_info?.currentPrice
+  const low52w = data.price_performance?.fiftyTwoWeekLow
+  const high52w = data.price_performance?.fiftyTwoWeekHigh
+  const dma50 = data.price_performance?.fiftyDayAverage
+  const dma200 = data.price_performance?.twoHundredDayAverage
+  const beta = data.risk?.beta
+
+  const pctFromLow52w = calcPercentFromPrice(currentPrice, low52w)
+  const pctFromHigh52w = calcPercentFromPrice(currentPrice, high52w)
+  const pctVs50DMA = calcPercentFromPrice(currentPrice, dma50)
+  const pctVs200DMA = calcPercentFromPrice(currentPrice, dma200)
+  const volumeChange = calcVolumeChange(data.trading_info?.volume, data.trading_info?.averageVolume10days)
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full">
@@ -79,88 +105,148 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
         {/* TradingView Chart */}
         <TradingViewChart symbol={symbol} height={400} />
 
-        {/* Price Performance */}
+        {/* Price Performance - 3 Grid Layout */}
         <div className="bg-card border border-border rounded-md p-4">
           <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             <BarChart2 className="h-3.5 w-3.5" />
             Price Performance
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">Open</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.open?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Grid 1: 52W Low/High */}
+            <div className="space-y-2">
+              <div className="bg-secondary/50 rounded p-3 hover:bg-secondary/70 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground">52W Low</span>
+                  <span className="text-xs text-muted-foreground">${low52w?.toFixed(2) || "N/A"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">% from Low</span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    pctFromLow52w !== null && pctFromLow52w >= 0 ? "text-terminal-green" : "text-terminal-red"
+                  )}>
+                    {pctFromLow52w !== null ? `${pctFromLow52w >= 0 ? "+" : ""}${pctFromLow52w.toFixed(2)}%` : "N/A"}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-secondary/50 rounded p-3 hover:bg-secondary/70 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground">52W High</span>
+                  <span className="text-xs text-muted-foreground">${high52w?.toFixed(2) || "N/A"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">% from High</span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    pctFromHigh52w !== null && pctFromHigh52w >= 0 ? "text-terminal-green" : "text-terminal-red"
+                  )}>
+                    {pctFromHigh52w !== null ? `${pctFromHigh52w >= 0 ? "+" : ""}${pctFromHigh52w.toFixed(2)}%` : "N/A"}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">Prev Close</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.previousClose?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
+
+            {/* Grid 2: DMA Comparisons */}
+            <div className="space-y-2">
+              <div className="bg-secondary/50 rounded p-3 hover:bg-secondary/70 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground">50 DMA</span>
+                  <span className="text-xs text-muted-foreground">${dma50?.toFixed(2) || "N/A"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">% vs 50 DMA</span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    pctVs50DMA !== null && pctVs50DMA >= 0 ? "text-terminal-green" : "text-terminal-red"
+                  )}>
+                    {pctVs50DMA !== null ? `${pctVs50DMA >= 0 ? "+" : ""}${pctVs50DMA.toFixed(2)}%` : "N/A"}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-secondary/50 rounded p-3 hover:bg-secondary/70 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground">200 DMA</span>
+                  <span className="text-xs text-muted-foreground">${dma200?.toFixed(2) || "N/A"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">% vs 200 DMA</span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    pctVs200DMA !== null && pctVs200DMA >= 0 ? "text-terminal-green" : "text-terminal-red"
+                  )}>
+                    {pctVs200DMA !== null ? `${pctVs200DMA >= 0 ? "+" : ""}${pctVs200DMA.toFixed(2)}%` : "N/A"}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">Day Low</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.dayLow?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
-            </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">Day High</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.dayHigh?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
-            </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">52W Low</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.fiftyTwoWeekLow?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
-            </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">52W High</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.fiftyTwoWeekHigh?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
-            </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">50 DMA</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.fiftyDayAverage?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
-            </div>
-            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-              <span className="text-[10px] text-muted-foreground block">200 DMA</span>
-              <span className="text-sm font-medium text-foreground">
-                {data.price_performance?.twoHundredDayAverage?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
-              </span>
+
+            {/* Grid 3: Beta & Volume */}
+            <div className="space-y-2">
+              <div className="bg-secondary/50 rounded p-3 hover:bg-secondary/70 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground">Market Sensitivity</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">Beta</span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    beta !== null && beta !== undefined
+                      ? beta > 1.5 ? "text-warning" : beta < 0.8 ? "text-terminal-green" : "text-foreground"
+                      : "text-muted-foreground"
+                  )}>
+                    {beta?.toFixed(2) || "N/A"}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-secondary/50 rounded p-3 hover:bg-secondary/70 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground">vs 10D Avg Vol</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">Vol Change</span>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    volumeChange !== null 
+                      ? Math.abs(volumeChange) > 50 
+                        ? "text-warning" 
+                        : volumeChange >= 0 
+                          ? "text-terminal-green" 
+                          : "text-terminal-red"
+                      : "text-muted-foreground"
+                  )}>
+                    {volumeChange !== null ? `${volumeChange >= 0 ? "+" : ""}${volumeChange.toFixed(1)}%` : "N/A"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* 52-Week Range Bar */}
-          {data.price_performance?.fiftyTwoWeekLow && data.price_performance?.fiftyTwoWeekHigh && (
+          {low52w && high52w && (
             <div className="mt-4">
               <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>{data.price_performance.fiftyTwoWeekLow.toFixed(2)}</span>
+                <span>{low52w.toFixed(2)}</span>
                 <span>52-Week Range</span>
-                <span>{data.price_performance.fiftyTwoWeekHigh.toFixed(2)}</span>
+                <span>{high52w.toFixed(2)}</span>
               </div>
-              <div className="relative h-2 bg-secondary rounded-full overflow-hidden">
+              <div className="relative h-1.5 bg-secondary/50 rounded-full overflow-hidden">
                 <div
-                  className="absolute h-full bg-gradient-to-r from-terminal-red via-warning to-terminal-green"
+                  className="absolute h-full bg-gradient-to-r from-terminal-red/60 via-warning/60 to-terminal-green/60"
                   style={{ width: "100%" }}
                 />
                 <div
-                  className="absolute top-0 w-0.5 h-full bg-foreground"
+                  className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-foreground rounded-full border border-background shadow-sm"
                   style={{
                     left: `${Math.min(
                       100,
                       Math.max(
                         0,
-                        ((data.main_info?.currentPrice || 0) - data.price_performance.fiftyTwoWeekLow) /
-                          (data.price_performance.fiftyTwoWeekHigh - data.price_performance.fiftyTwoWeekLow) *
+                        ((currentPrice || 0) - low52w) /
+                          (high52w - low52w) *
                           100
                       )
                     )}%`,
+                    transform: 'translate(-50%, -50%)',
                   }}
                 />
               </div>
@@ -168,12 +254,12 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
           )}
         </div>
 
-        {/* Price Targets & Recommendations */}
+        {/* Price Targets & Recommendations - Recommendation Last */}
         {(data.price_targets?.targetMeanPrice || data.price_targets?.recommendationKey) && (
           <div className="bg-card border border-border rounded-md p-4">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               <Target className="h-3.5 w-3.5" />
-              Analyst Targets & Recommendations
+              Analyst Targets
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
@@ -195,6 +281,12 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
                 </span>
               </div>
               <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
+                <span className="text-[10px] text-muted-foreground block">Analyst Count</span>
+                <span className="text-sm font-medium text-foreground">
+                  {data.price_targets?.numberOfAnalystOpinions || "N/A"}
+                </span>
+              </div>
+              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
                 <span className="text-[10px] text-muted-foreground block">Recommendation</span>
                 <span className={cn(
                   "text-sm font-medium uppercase",
@@ -207,43 +299,38 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
                   {data.price_targets?.recommendationKey?.replace("_", " ") || "N/A"}
                 </span>
               </div>
-              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
-                <span className="text-[10px] text-muted-foreground block">Analyst Count</span>
-                <span className="text-sm font-medium text-foreground">
-                  {data.price_targets?.numberOfAnalystOpinions || "N/A"}
-                </span>
-              </div>
             </div>
 
             {/* Target Range Bar */}
-            {data.price_targets?.targetLowPrice && data.price_targets?.targetHighPrice && data.main_info?.currentPrice && (
+            {data.price_targets?.targetLowPrice && data.price_targets?.targetHighPrice && currentPrice && (
               <div className="mt-4">
                 <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
                   <span>Low: ${data.price_targets.targetLowPrice.toFixed(2)}</span>
                   <span>Price Target Range</span>
                   <span>High: ${data.price_targets.targetHighPrice.toFixed(2)}</span>
                 </div>
-                <div className="relative h-3 bg-secondary rounded-full overflow-hidden">
-                  <div className="absolute h-full bg-gradient-to-r from-terminal-red via-warning to-terminal-green w-full" />
+                <div className="relative h-1.5 bg-secondary/50 rounded-full overflow-hidden">
+                  <div className="absolute h-full bg-gradient-to-r from-terminal-red/60 via-warning/60 to-terminal-green/60 w-full" />
                   {/* Current Price Marker */}
                   <div
-                    className="absolute top-0 w-1 h-full bg-foreground rounded"
+                    className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-foreground rounded-full border border-background shadow-sm"
                     style={{
                       left: `${Math.min(
                         100,
                         Math.max(
                           0,
-                          ((data.main_info.currentPrice - data.price_targets.targetLowPrice) /
+                          ((currentPrice - data.price_targets.targetLowPrice) /
                             (data.price_targets.targetHighPrice - data.price_targets.targetLowPrice)) *
                             100
                         )
                       )}%`,
+                      transform: 'translate(-50%, -50%)',
                     }}
-                    title={`Current: $${data.main_info.currentPrice.toFixed(2)}`}
+                    title={`Current: $${currentPrice.toFixed(2)}`}
                   />
                 </div>
                 <div className="text-center text-[10px] text-muted-foreground mt-1">
-                  Current Price: ${data.main_info.currentPrice.toFixed(2)}
+                  Current Price: ${currentPrice.toFixed(2)}
                 </div>
               </div>
             )}
