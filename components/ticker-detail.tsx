@@ -2,10 +2,13 @@
 
 import { TradingViewChart } from "./tradingview-chart"
 import { TickerSidebar } from "./ticker-sidebar"
-import { formatChange, formatLargeNumber } from "@/lib/api"
+import { formatChange } from "@/lib/api"
 import type { TickerData } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { TrendingUp, TrendingDown, ExternalLink, Clock } from "lucide-react"
+import { 
+  TrendingUp, TrendingDown, ExternalLink, Clock, 
+  BarChart2, Target, Newspaper, Activity, ArrowUpRight, ArrowDownRight
+} from "lucide-react"
 
 interface TickerDetailProps {
   data: TickerData | null
@@ -26,6 +29,7 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
 
   const change = formatChange(data.trading_info?.oneDayChange || data.main_info?.oneDayChange)
   const TrendIcon = change.isPositive ? TrendingUp : TrendingDown
+  const ArrowIcon = change.isPositive ? ArrowUpRight : ArrowDownRight
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full">
@@ -36,8 +40,9 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
                 <h1 className="text-xl font-bold text-foreground">{data.main_info?.shortName || symbol}</h1>
-                <span className="text-sm text-muted-foreground">{symbol}</span>
+                <span className="text-sm text-muted-foreground bg-secondary px-2 py-0.5 rounded">{symbol}</span>
               </div>
               {(data.main_info?.sector || data.main_info?.industry) && (
                 <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
@@ -63,7 +68,7 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
                   "flex items-center justify-end gap-1 text-sm font-medium",
                   change.isPositive ? "text-terminal-green" : "text-terminal-red"
                 )}>
-                  <TrendIcon className="h-4 w-4" />
+                  <ArrowIcon className="h-4 w-4" />
                   {change.isPositive && "+"}{change.value}
                 </div>
               </div>
@@ -76,53 +81,54 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
 
         {/* Price Performance */}
         <div className="bg-card border border-border rounded-md p-4">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <BarChart2 className="h-3.5 w-3.5" />
             Price Performance
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">Open</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.open?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">Prev Close</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.previousClose?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">Day Low</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.dayLow?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">Day High</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.dayHigh?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">52W Low</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.fiftyTwoWeekLow?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">52W High</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.fiftyTwoWeekHigh?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">50 DMA</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.fiftyDayAverage?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
               </span>
             </div>
-            <div className="bg-secondary/50 rounded p-2">
+            <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
               <span className="text-[10px] text-muted-foreground block">200 DMA</span>
               <span className="text-sm font-medium text-foreground">
                 {data.price_performance?.twoHundredDayAverage?.toLocaleString("en-US", { minimumFractionDigits: 2 }) || "N/A"}
@@ -165,29 +171,30 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
         {/* Price Targets & Recommendations */}
         {(data.price_targets?.targetMeanPrice || data.price_targets?.recommendationKey) && (
           <div className="bg-card border border-border rounded-md p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              <Target className="h-3.5 w-3.5" />
               Analyst Targets & Recommendations
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div className="bg-secondary/50 rounded p-2">
+              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
                 <span className="text-[10px] text-muted-foreground block">Low Target</span>
                 <span className="text-sm font-medium text-terminal-red">
                   {data.price_targets?.targetLowPrice?.toFixed(2) || "N/A"}
                 </span>
               </div>
-              <div className="bg-secondary/50 rounded p-2">
+              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
                 <span className="text-[10px] text-muted-foreground block">Mean Target</span>
                 <span className="text-sm font-medium text-warning">
                   {data.price_targets?.targetMeanPrice?.toFixed(2) || "N/A"}
                 </span>
               </div>
-              <div className="bg-secondary/50 rounded p-2">
+              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
                 <span className="text-[10px] text-muted-foreground block">High Target</span>
                 <span className="text-sm font-medium text-terminal-green">
                   {data.price_targets?.targetHighPrice?.toFixed(2) || "N/A"}
                 </span>
               </div>
-              <div className="bg-secondary/50 rounded p-2">
+              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
                 <span className="text-[10px] text-muted-foreground block">Recommendation</span>
                 <span className={cn(
                   "text-sm font-medium uppercase",
@@ -200,7 +207,7 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
                   {data.price_targets?.recommendationKey?.replace("_", " ") || "N/A"}
                 </span>
               </div>
-              <div className="bg-secondary/50 rounded p-2">
+              <div className="bg-secondary/50 rounded p-2 hover:bg-secondary/70 transition-colors">
                 <span className="text-[10px] text-muted-foreground block">Analyst Count</span>
                 <span className="text-sm font-medium text-foreground">
                   {data.price_targets?.numberOfAnalystOpinions || "N/A"}
@@ -246,18 +253,19 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
         {/* Recent News */}
         {data.recent_news && data.recent_news.length > 0 && (
           <div className="bg-card border border-border rounded-md p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              <Newspaper className="h-3.5 w-3.5" />
               Recent News
             </h3>
             <div className="space-y-3">
               {data.recent_news.slice(0, 5).map((news, index) => (
                 <div
                   key={index}
-                  className="bg-secondary/30 rounded p-3 hover:bg-secondary/50 transition-colors"
+                  className="bg-secondary/30 rounded p-3 hover:bg-secondary/50 transition-colors group"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-foreground line-clamp-2">
+                      <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
                         {news.title}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -275,7 +283,7 @@ export function TickerDetail({ data, symbol }: TickerDetailProps) {
                         href={news.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 transition-colors"
+                        className="text-muted-foreground hover:text-primary transition-colors"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
