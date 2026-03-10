@@ -89,7 +89,7 @@ export function MarketOutlook({ tickerData, onSelectTicker }: MarketOutlookProps
                 )}
               </div>
             </div>
-            <TradingViewChart symbol="SPX" height={380} />
+            <TradingViewChart symbol="SPY" height={380} />
           </div>
         </div>
 
