@@ -173,9 +173,8 @@ export interface TickerData {
   }>
 }
 
-// const API_BASE = "https://mini-finapi.vercel.app/api/ticker"
 
-// Use environment variable only — no fallback
+// NEXT_PUBLIC_API_BASE_URL environment variable 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function fetchTickers(tickers: string[]): Promise<TickerData[]> {
